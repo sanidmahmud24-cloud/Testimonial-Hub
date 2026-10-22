@@ -1,0 +1,59 @@
+{
+  "ts": 1792414326393,
+  "steps": [
+    {
+      "step": "homepage",
+      "method": "GET",
+      "url": "/",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "step": "signin-get",
+      "method": "GET",
+      "url": "/sign-in",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "step": "signin-csrf",
+      "method": "GET",
+      "url": "/api/auth/csrf",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "step": "signin-post",
+      "method": "POST",
+      "url": "/api/auth/callback/credentials",
+      "status": 302,
+      "redirect": "http://localhost:3000/sign-in?error=CredentialsSignin&code=credentials",
+      "ok": true
+    },
+    {
+      "step": "dashboard-get",
+      "method": "GET",
+      "url": "/dashboard",
+      "status": 307,
+      "redirect": "/sign-in?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard",
+      "ok": true
+    },
+    {
+      "step": "session-get",
+      "method": "GET",
+      "url": "/api/auth/session",
+      "status": 200,
+      "ok": true,
+      "notes": "sessionEmail=none"
+    },
+    {
+      "step": "c-bogus",
+      "method": "GET",
+      "url": "/c/http-e2e-mvf97lo9-bogus",
+      "status": 404,
+      "ok": false
+    }
+  ],
+  "email": "http-e2e-1792414326393@example.com",
+  "slug": "http-e2e-mvf97lo9"
+}

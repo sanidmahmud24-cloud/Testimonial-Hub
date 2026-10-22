@@ -1,0 +1,75 @@
+{
+  "ts": 1792431400801,
+  "email": "http-e2e-1792431400801-0e0150@example.com",
+  "slug": "http-e2e-mvfjdkdd",
+  "ok": true,
+  "log": [
+    {
+      "step": "csrf",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "status": 200,
+      "location": null
+    },
+    {
+      "step": "signin",
+      "method": "POST",
+      "path": "/api/auth/callback/credentials",
+      "status": 302,
+      "location": "http://localhost:3000/dashboard"
+    },
+    {
+      "step": "session",
+      "method": "GET",
+      "path": "/api/auth/session",
+      "status": 200,
+      "location": null,
+      "notes": "email=http-e2e-1792431400801-0e0150@example.com"
+    },
+    {
+      "step": "dashboard",
+      "method": "GET",
+      "path": "/dashboard",
+      "status": 200,
+      "location": null,
+      "notes": "containsWorkspace=true"
+    },
+    {
+      "step": "inbox",
+      "method": "GET",
+      "path": "/dashboard/workspaces/cmvfjdmsa0001pgdtj3lrsyf8/inbox",
+      "status": 200,
+      "location": null
+    },
+    {
+      "step": "collection",
+      "method": "GET",
+      "path": "/c/http-e2e-mvfjdkdd",
+      "status": 200,
+      "location": null,
+      "notes": "hasFormToken=true"
+    },
+    {
+      "step": "wall",
+      "method": "GET",
+      "path": "/c/http-e2e-mvfjdkdd/wall",
+      "status": 200,
+      "location": null,
+      "notes": "noTestimonials=true"
+    },
+    {
+      "step": "embed",
+      "method": "GET",
+      "path": "/embed/http-e2e-mvfjdkdd",
+      "status": 200,
+      "location": null
+    },
+    {
+      "step": "other-workspace",
+      "method": "GET",
+      "path": "/dashboard/workspaces/cm-nonexistent",
+      "status": 200,
+      "location": null
+    }
+  ]
+}

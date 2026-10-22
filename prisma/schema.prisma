@@ -1,0 +1,149 @@
+// Prisma schema for TestimonialHub
+// See Docs/TestimonialHub_SRS.docx §5 (Data requirements) for the source of truth.
+// Database: PostgreSQL on Neon.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------
+
+enum TestimonialStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ------------------------------------------------------------
+// Core entities
+// ------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  workspaces Workspace[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  themeColor  String?
+  // Random per-workspace salt used to hash submitter IPs into SubmissionToken.ipHash.
+  // Generated at workspace create-time (lib/workspaces/service.ts). Never returned by
+  // any public projection, never logged.
+  ipSalt      String   @default("")
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  testimonials     Testimonial[]
+  tags             Tag[]
+  pageViews        PageView[]
+  submissionTokens SubmissionToken[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model Testimonial {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  submitterName String
+  role          String?
+  company       String?
+  // Email is private. The public projection in lib/public must NEVER return it.
+  email         String?
+  content       String
+  rating        Int?
+  consentGiven  Boolean
+  status        TestimonialStatus @default(PENDING)
+  isFeatured    Boolean           @default(false)
+  isPublished   Boolean           @default(false)
+  createdAt     DateTime          @default(now()) @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @db.Timestamptz
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tags      TestimonialTag[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, isPublished])
+  @@map("testimonials")
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime @default(now()) @db.Timestamptz
+
+  workspace    Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  testimonials TestimonialTag[]
+
+  @@unique([workspaceId, name])
+  @@map("tags")
+}
+
+// Many-to-many between Testimonial and Tag
+model TestimonialTag {
+  testimonialId String
+  tagId         String
+
+  testimonial Testimonial @relation(fields: [testimonialId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([testimonialId, tagId])
+  @@map("testimonial_tags")
+}
+
+// Optional analytics. NFR-04 / dashboard metrics (SRS-FR-16).
+model PageView {
+  id             BigInt   @id @default(autoincrement())
+  workspaceId    String
+  pageType       String // 'collection' | 'showcase' | 'embed'
+  referrerDomain String?
+  viewedAt       DateTime @default(now()) @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, viewedAt])
+  @@map("page_views")
+}
+
+// Per-form submission token. Minted when /c/<slug> is rendered; consumed
+// transactionally with the Testimonial insert (lib/submission-tokens/service.ts).
+// Stores only SHA-256(token); the plaintext is sent to the client in a hidden
+// <input>. ipHash = SHA-256(ip || workspace.ipSalt); raw IPs are never stored.
+// See Docs/TestimonialHub_SRS.md Appendix B.1 and Appendix C.1 / C.2.
+model SubmissionToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  tokenHash   String    @unique
+  ipHash      String
+  userAgent   String?
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, expiresAt])
+  @@index([ipHash, createdAt])
+  @@map("submission_tokens")
+}
